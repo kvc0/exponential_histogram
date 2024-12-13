@@ -22,4 +22,13 @@ impl SharedExponentialHistogram {
     pub fn snapshot(&self) -> ExponentialHistogram {
         self.inner.lock().expect("local mutex works").clone()
     }
+
+    /// Get the current snapshot of the histogram. This gives you an owned clone of the backing histogram
+    /// at a point in time, so you can work with it without holding a lock.
+    pub fn snapshot_and_reset(&self) -> ExponentialHistogram {
+        let mut histogram = self.inner.lock().expect("local mutex works");
+        let snapshot = histogram.clone();
+        histogram.reset();
+        snapshot
+    }
 }

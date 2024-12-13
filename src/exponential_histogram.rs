@@ -9,6 +9,7 @@ use std::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExponentialHistogram {
     actual_scale: u8,
+    desired_scale: u8,
     max_bucket_count: u16,
     bucket_start_offset: u32,
     positive_buckets: VecDeque<usize>,
@@ -49,13 +50,23 @@ impl ExponentialHistogram {
     /// then your output scale will match your desired scale. If your observed range exceeds
     /// max_buckets then scale will be reduced to reflect the data's width.
     pub fn new_with_max_buckets(desired_scale: u8, max_buckets: u16) -> Self {
+        let desired_scale = desired_scale.clamp(0, 8);
         Self {
-            actual_scale: desired_scale.clamp(1, 8),
+            actual_scale: desired_scale,
+            desired_scale,
             max_bucket_count: max_buckets,
             bucket_start_offset: 0,
             positive_buckets: Default::default(),
             negative_buckets: Default::default(),
         }
+    }
+
+    /// Reset this histogram to an empty state
+    pub fn reset(&mut self) {
+        self.actual_scale = self.desired_scale;
+        self.bucket_start_offset = 0;
+        self.positive_buckets.clear();
+        self.negative_buckets.clear();
     }
 
     /// Observe a value, increasing its bucket's count by 1
